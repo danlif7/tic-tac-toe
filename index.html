@@ -35,17 +35,30 @@
       font-size: 1.2em;
       font-weight: bold;
     }
+    .controls {
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
   <h1>Tic-Tac-Toe</h1>
+  <div class="controls">
+    <button id="twoPlayerMode">Two-Player Mode</button>
+    <button id="resetGame">Reset Game</button>
+  </div>
   <div class="board" id="board"></div>
   <div id="message"></div>
 
   <script>
     const boardElement = document.getElementById('board');
     const messageElement = document.getElementById('message');
+    const twoPlayerModeButton = document.getElementById('twoPlayerMode');
+    const resetGameButton = document.getElementById('resetGame');
+
     let board = ["", "", "", "", "", "", "", "", ""];
+    let isTwoPlayerMode = false;
+    let currentPlayer = "O"; // Tracks whose turn it is
+    let firstPlayer = "O"; // Tracks who starts the game (rotates each game)
 
     const winningCombinations = [
       [0, 1, 2],
@@ -58,8 +71,8 @@
       [2, 4, 6]
     ];
 
-    const player = "X";
-    const computer = "O";
+    const playerX = "X";
+    const playerO = "O";
 
     function checkWinner(board, player) {
       return winningCombinations.some(combination =>
@@ -71,9 +84,19 @@
       return board.every(cell => cell !== "");
     }
 
+    function computerMove() {
+      if (isTwoPlayerMode) return; // Skip if in two-player mode
+
+      const bestMove = minimax(board, true);
+      board[bestMove.index] = playerO;
+      currentPlayer = playerX;
+      renderBoard();
+      checkGameOver();
+    }
+
     function minimax(newBoard, isMaximizing) {
-      if (checkWinner(newBoard, computer)) return { score: 10 };
-      if (checkWinner(newBoard, player)) return { score: -10 };
+      if (checkWinner(newBoard, playerO)) return { score: 10 };
+      if (checkWinner(newBoard, playerX)) return { score: -10 };
       if (isFull(newBoard)) return { score: 0 };
 
       const moves = [];
@@ -82,7 +105,7 @@
         if (newBoard[i] === "") {
           const move = {};
           move.index = i;
-          newBoard[i] = isMaximizing ? computer : player;
+          newBoard[i] = isMaximizing ? playerO : playerX;
           const result = minimax(newBoard, !isMaximizing);
           move.score = result.score;
           newBoard[i] = "";
@@ -112,13 +135,6 @@
       return bestMove;
     }
 
-    function computerMove() {
-      const bestMove = minimax(board, true);
-      board[bestMove.index] = computer;
-      renderBoard();
-      checkGameOver();
-    }
-
     function renderBoard() {
       boardElement.innerHTML = "";
       board.forEach((cell, index) => {
@@ -126,26 +142,31 @@
         cellElement.classList.add('cell');
         if (cell) cellElement.classList.add('taken');
         cellElement.textContent = cell;
-        cellElement.addEventListener('click', () => playerMove(index));
+        cellElement.addEventListener('click', () => handleMove(index));
         boardElement.appendChild(cellElement);
       });
     }
 
-    function playerMove(index) {
-      if (board[index] === "") {
-        board[index] = player;
-        renderBoard();
-        if (!checkGameOver()) computerMove();
+    function handleMove(index) {
+      if (board[index] !== "") return;
+
+      board[index] = currentPlayer;
+      renderBoard();
+      if (!checkGameOver()) {
+        currentPlayer = currentPlayer === playerX ? playerO : playerX;
+        if (currentPlayer === playerO && !isTwoPlayerMode) {
+          computerMove();
+        }
       }
     }
 
     function checkGameOver() {
-      if (checkWinner(board, player)) {
-        messageElement.textContent = "You win!";
+      if (checkWinner(board, playerX)) {
+        messageElement.textContent = "Player X wins!";
         disableBoard();
         return true;
-      } else if (checkWinner(board, computer)) {
-        messageElement.textContent = "Computer wins!";
+      } else if (checkWinner(board, playerO)) {
+        messageElement.textContent = isTwoPlayerMode ? "Player O wins!" : "Computer wins!";
         disableBoard();
         return true;
       } else if (isFull(board)) {
@@ -160,9 +181,32 @@
       cells.forEach(cell => cell.classList.add('taken'));
     }
 
+    function resetGame() {
+      board = ["", "", "", "", "", "", "", "", ""];
+      firstPlayer = firstPlayer === playerX ? playerO : playerX; // Rotate who starts
+      currentPlayer = firstPlayer;
+      messageElement.textContent = "";
+      renderBoard();
+      if (!isTwoPlayerMode && currentPlayer === playerO) {
+        computerMove();
+      }
+    }
+
+    function toggleTwoPlayerMode() {
+      isTwoPlayerMode = !isTwoPlayerMode;
+      twoPlayerModeButton.textContent = isTwoPlayerMode ? "Single-Player Mode" : "Two-Player Mode";
+      resetGame();
+    }
+
+    // Event Listeners
+    twoPlayerModeButton.addEventListener('click', toggleTwoPlayerMode);
+    resetGameButton.addEventListener('click', resetGame);
+
     // Initialize the game
     renderBoard();
-    computerMove();
+    if (!isTwoPlayerMode && currentPlayer === playerO) {
+      computerMove();
+    }
   </script>
 </body>
 </html>
