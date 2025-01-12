@@ -219,20 +219,10 @@
     }
 
     function suggestMove() {
-  console.log("suggestMove() called"); // Log to check if function is called
-  console.log("isTwoPlayerMode:", isTwoPlayerMode, "currentPlayer:", currentPlayer); // Log game state
-
-  if (isTwoPlayerMode || currentPlayer !== playerX) {
-    playerSuggestionElement.textContent = "";
-    console.log("No suggestion displayed (either two-player mode or not player's turn).");
-    return;
-  }
-
-  const suggestion = minimax(board, false);
-  console.log("Suggested move:", suggestion); // Log suggested move details
-  playerSuggestionElement.textContent = `Suggested move: Place X at position ${suggestion.index + 1}. Reason: ${suggestion.reason}`;
-
-  }
+      if (isTwoPlayerMode || currentPlayer !== playerX) {
+        playerSuggestionElement.textContent = "";
+        return;
+      }
 
       const suggestion = minimax(board, false);
       playerSuggestionElement.textContent = `Suggested move: Place X at position ${suggestion.index + 1}. Reason: ${suggestion.reason}`;
