@@ -38,6 +38,11 @@
     .controls {
       margin-top: 20px;
     }
+    #aiExplanation, #playerSuggestion {
+      margin-top: 10px;
+      font-size: 1em;
+      color: #555;
+    }
   </style>
 </head>
 <body>
@@ -48,10 +53,14 @@
   </div>
   <div class="board" id="board"></div>
   <div id="message"></div>
+  <div id="aiExplanation"></div>
+  <div id="playerSuggestion"></div>
 
   <script>
     const boardElement = document.getElementById('board');
     const messageElement = document.getElementById('message');
+    const aiExplanationElement = document.getElementById('aiExplanation');
+    const playerSuggestionElement = document.getElementById('playerSuggestion');
     const twoPlayerModeButton = document.getElementById('twoPlayerMode');
     const resetGameButton = document.getElementById('resetGame');
 
@@ -90,14 +99,16 @@
       const bestMove = minimax(board, true);
       board[bestMove.index] = playerO;
       currentPlayer = playerX;
+      aiExplanationElement.textContent = `Computer played at position ${bestMove.index + 1}. Reason: ${bestMove.reason}`;
       renderBoard();
       checkGameOver();
+      suggestMove();
     }
 
     function minimax(newBoard, isMaximizing) {
-      if (checkWinner(newBoard, playerO)) return { score: 10 };
-      if (checkWinner(newBoard, playerX)) return { score: -10 };
-      if (isFull(newBoard)) return { score: 0 };
+      if (checkWinner(newBoard, playerO)) return { score: 10, reason: "Winning move" };
+      if (checkWinner(newBoard, playerX)) return { score: -10, reason: "Blocking opponent's win" };
+      if (isFull(newBoard)) return { score: 0, reason: "Board is full" };
 
       const moves = [];
 
@@ -108,6 +119,9 @@
           newBoard[i] = isMaximizing ? playerO : playerX;
           const result = minimax(newBoard, !isMaximizing);
           move.score = result.score;
+          move.reason = isMaximizing
+            ? "Maximizing computer's advantage"
+            : "Minimizing player's advantage";
           newBoard[i] = "";
           moves.push(move);
         }
@@ -156,6 +170,8 @@
         currentPlayer = currentPlayer === playerX ? playerO : playerX;
         if (currentPlayer === playerO && !isTwoPlayerMode) {
           computerMove();
+        } else {
+          suggestMove();
         }
       }
     }
@@ -186,9 +202,13 @@
       firstPlayer = firstPlayer === playerX ? playerO : playerX; // Rotate who starts
       currentPlayer = firstPlayer;
       messageElement.textContent = "";
+      aiExplanationElement.textContent = "";
+      playerSuggestionElement.textContent = "";
       renderBoard();
       if (!isTwoPlayerMode && currentPlayer === playerO) {
         computerMove();
+      } else {
+        suggestMove();
       }
     }
 
@@ -196,6 +216,16 @@
       isTwoPlayerMode = !isTwoPlayerMode;
       twoPlayerModeButton.textContent = isTwoPlayerMode ? "Single-Player Mode" : "Two-Player Mode";
       resetGame();
+    }
+
+    function suggestMove() {
+      if (isTwoPlayerMode || currentPlayer !== playerX) {
+        playerSuggestionElement.textContent = "";
+        return;
+      }
+
+      const suggestion = minimax(board, false);
+      playerSuggestionElement.textContent = `Suggested move: Place X at position ${suggestion.index + 1}. Reason: ${suggestion.reason}`;
     }
 
     // Event Listeners
@@ -206,6 +236,8 @@
     renderBoard();
     if (!isTwoPlayerMode && currentPlayer === playerO) {
       computerMove();
+    } else {
+      suggestMove();
     }
   </script>
 </body>
